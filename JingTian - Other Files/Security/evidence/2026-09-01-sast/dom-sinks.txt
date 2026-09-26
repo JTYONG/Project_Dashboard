@@ -1,0 +1,39 @@
+MyHealthReport DOM/front-end security scan
+target: Phase i/demo   2026-09-01T17:53:53.554Z
+========================================================================
+
+[HIGH] MHR-HTML-ACCUM
+  HTML markup accumulated into a string variable — the classic unescaped-report pattern.
+  fix: Escape at every interpolation point, or build the report as nodes.
+    Phase i/demo/js/app.js:195  html += "<div class='pathway-banner " + toneClass(report.redFlag.pathway.tone) + "'>" +
+    Phase i/demo/js/app.js:216  html += "<div class='domain-row'><span>" + d.domain + "</span>" +
+    Phase i/demo/js/app.js:230  html += "<div class='finding-row'><div><div class='name'>" + f.name + "</div>" +
+    Phase i/demo/js/app.js:238  html += "<div class='report-section'><h2>4. Recommendations</h2>" +
+    Phase i/demo/js/app.js:259  html += "<li>" + r.followUp + "</li>";
+    Phase i/demo/js/app.js:267  html += "<div class='version-footer'>User: " + report.userId + " &middot; Generated: " + new Date(report.gener
+
+[HIGH] MHR-PATH-TRAVERSAL
+  Request-controlled path joined to a filesystem root. '../' escapes the root.
+  fix: path.resolve() then verify the result still startsWith the root before reading.
+    Phase i/demo/test/smoke.js:21  let filePath = path.join(ROOT, decodeURIComponent(req.url.split("?")[0]));
+
+[HIGH] MHR-SINK-HTML
+  HTML sink assigned a non-empty value. Anything interpolated here is unescaped by construction.
+  fix: Use textContent, or route every interpolated value through one escapeHtml() helper.
+    Phase i/demo/js/app.js:133  tr.innerHTML =
+    Phase i/demo/js/app.js:153  container.innerHTML = "<p class='hint'>No findings activated a targeted question set -- nothing further to ask
+    Phase i/demo/js/app.js:272  root.innerHTML = html;
+
+[HIGH] MHR-WEAK-ID
+  Predictable identifier. Math.random() is not a source of unguessable values.
+  fix: crypto.randomUUID() or crypto.getRandomValues().
+    Phase i/demo/js/app.js:23  userId: "DEMO-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+
+[MEDIUM] MHR-NO-CSP
+  No Content-Security-Policy. A CSP is the cheapest mitigation for the HTML-sink findings above.
+  fix: Add a meta CSP now; move it to a response header when a server exists.
+    Phase i/demo/index.html:1  <head> has no CSP meta tag
+
+========================================================================
+12 finding(s), 11 high.
+Not all are exploitable today — triage per Security/agent/RUNBOOK.md step 2.

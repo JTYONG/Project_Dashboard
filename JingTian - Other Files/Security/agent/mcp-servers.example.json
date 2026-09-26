@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Example MCP wiring for the agentic stage. Copy to your agent client's",
+    "config and fill in paths/keys. Do not commit real keys.",
+    "HexStrike exposes conventional security tooling to the agent; keep the",
+    "agent itself sandboxed and egress-restricted per RULES_OF_ENGAGEMENT.md."
+  ],
+  "mcpServers": {
+    "hexstrike": {
+      "command": "python3",
+      "args": ["/opt/hexstrike-ai/hexstrike_mcp.py"],
+      "env": {
+        "HEXSTRIKE_ALLOWED_TARGETS": "staging.example.internal"
+      }
+    },
+    "zap": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--network", "pentest-net",
+        "ghcr.io/zaproxy/zaproxy:stable",
+        "zap.sh", "-daemon", "-port", "8080"
+      ]
+    },
+    "semgrep": {
+      "command": "npx",
+      "args": ["-y", "semgrep-mcp"]
+    }
+  }
+}

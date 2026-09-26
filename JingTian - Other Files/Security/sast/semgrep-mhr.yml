@@ -1,0 +1,105 @@
+# Custom Semgrep rules for MyHealthReport.
+# Run with the registry packs as well:
+#   semgrep --config p/javascript --config p/owasp-top-ten \
+#           --config Security/sast/semgrep-mhr.yml
+rules:
+  - id: mhr-innerhtml-concatenation
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      HTML built by string concatenation and assigned to an HTML sink. Any
+      value reaching this sink from a lab report, OCR output or user free text
+      is stored XSS in an application holding health data. Use textContent, or
+      one escaping helper applied to every interpolated value.
+    pattern-either:
+      - pattern: $EL.innerHTML = $A + $B
+      - pattern: $EL.outerHTML = $A + $B
+      - pattern: $EL.insertAdjacentHTML($POS, $A + $B)
+      - pattern: document.write($A + $B)
+
+  - id: mhr-html-string-accumulator
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      HTML markup accumulated into a string variable. Whatever is interpolated
+      here is unescaped by construction. Build nodes, or escape at every
+      interpolation point.
+    pattern-regex: '\w+\s*\+=\s*["\x27`]<[a-zA-Z/]'
+
+  - id: mhr-unescaped-template-interpolation
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      Template literal containing HTML tags interpolates a value directly.
+      Escape it before it reaches the DOM.
+    pattern-regex: '`[^`]*<[a-zA-Z][^`]*\$\{[^}]+\}[^`]*`'
+
+  - id: mhr-insecure-random-identifier
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Math.random() used to build an identifier or token. It is predictable.
+      Use crypto.randomUUID() or crypto.getRandomValues() for anything that
+      identifies a user, a report, a session or a download link.
+    pattern-regex: '(?i)(user_?id|report_?id|token|session_?id|nonce|secret|key)\s*[:=][^;\n]{0,80}Math\.random'
+
+  - id: mhr-phi-in-browser-storage
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Health data written to browser storage. localStorage and sessionStorage
+      are readable by any script on the origin, survive logout, and are not
+      encrypted. Keep patient data server-side, or in memory for the session.
+    patterns:
+      - pattern-either:
+          - pattern: localStorage.setItem($K, $V)
+          - pattern: sessionStorage.setItem($K, $V)
+      - metavariable-regex:
+          metavariable: $K
+          regex: '(?i).*(patient|report|lab|result|health|phi|profile|consent|demograph|hba1c|glucose|user).*'
+
+  - id: mhr-phi-in-logs
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      Logging a whole state/report/patient object. Logs are replicated to
+      places with weaker access control than the database. Log identifiers,
+      not values.
+    patterns:
+      - pattern-either:
+          - pattern: console.$LOG(..., $OBJ, ...)
+          - pattern: logger.$LOG(..., $OBJ, ...)
+      - metavariable-regex:
+          metavariable: $OBJ
+          regex: '^(state|report|patient|labResults|findings|profile|demographics|answers)$'
+
+  - id: mhr-path-join-from-request
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      A request-controlled path is joined to a filesystem root without
+      normalisation. `../` escapes the root and reads arbitrary files. Resolve
+      the path and verify it still starts with the root before reading.
+    pattern-either:
+      - pattern: path.join($ROOT, decodeURIComponent(...))
+      - pattern: path.join($ROOT, $REQ.url)
+      - pattern: path.join($ROOT, $REQ.params.$P)
+
+  - id: mhr-llm-output-drives-clinical-logic
+    languages: [javascript, typescript, python]
+    severity: ERROR
+    message: >-
+      A value derived from a model response is being used to set a severity,
+      pathway or risk classification. Model output is untrusted text. It may
+      populate candidate lab values for human verification; it must never set
+      the clinical pathway directly.
+    pattern-regex: '(?i)(severity|pathway|red_?flag|risk_?band|classification)\s*[:=][^;\n]{0,80}(completion|response|llm|model|gpt|claude|ai_?out)'
+
+  - id: mhr-unverified-upload-handling
+    languages: [javascript, typescript, python]
+    severity: WARNING
+    message: >-
+      Upload handling that trusts the client-supplied filename or MIME type.
+      Verify magic bytes, cap the size, and never derive a storage path from
+      the original filename.
+    pattern-regex: '(?i)(mimetype|originalname|content_?type|filename)[^\n]{0,60}(save|write|join|path)'

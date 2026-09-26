@@ -1,0 +1,12 @@
+# ZAP baseline rule tuning. Columns: rule-id	action	comment
+# action: IGNORE | WARN | FAIL
+10015	WARN	Incomplete or no cache-control — must be FAIL once reports are served
+10038	FAIL	Content Security Policy header missing
+10063	FAIL	Permissions policy header missing
+10020	FAIL	Anti-clickjacking header missing
+10021	FAIL	X-Content-Type-Options missing
+10035	FAIL	Strict-Transport-Security missing
+10202	FAIL	Absence of anti-CSRF tokens
+90022	FAIL	Application error disclosure — may leak PHI in stack traces
+10096	WARN	Timestamp disclosure
+10109	WARN	Modern web application

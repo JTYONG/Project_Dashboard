@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MyHealthReport — Version 1 Demo</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">MyHealthReport <span class="tag">Version 1 · Working Demo</span></div>
+  <div class="stepper" id="stepper"></div>
+</header>
+
+<div class="disclaimer">
+  ⚠️ <strong>Prototype for internal review.</strong> All reference ranges and thresholds in this build are illustrative
+  placeholders (see <code>js/data/labDictionary.js</code>) and are <strong>not</strong> validated clinical content. This demo
+  is not medical advice and must not be used for real patient decisions until the Four Master Matrices are clinically validated.
+</div>
+
+<main id="app">
+
+  <!-- STEP 0: Welcome -->
+  <section class="step" data-step="welcome">
+    <h1>Welcome</h1>
+    <p>This is a working first-version demo of the MyHealthReport pipeline: profile intake → blood report entry →
+      classification → red-flag check → risk stratification → domain analysis → targeted questions → prioritised,
+      explained recommendations → final report.</p>
+    <p>It implements the Phase&nbsp;1 scope from the framework (metabolic / cardiovascular domains) end to end, entirely
+      in your browser — nothing is sent anywhere.</p>
+    <div class="btn-row">
+      <button class="btn primary" id="btnStart">Start New Assessment</button>
+      <button class="btn ghost" id="btnSampleRoutine">Load Sample Patient (Routine)</button>
+      <button class="btn ghost" id="btnSampleUrgent">Load Sample Patient (Urgent)</button>
+    </div>
+  </section>
+
+  <!-- STEP 1: Demographics -->
+  <section class="step" data-step="demographics" hidden>
+    <h1>Basic Demographic Profile</h1>
+    <p class="hint">Module 2 — stable variables used by every downstream engine.</p>
+    <div class="form-grid">
+      <label>Age (years)
+        <input type="number" id="f_age" min="1" max="120" />
+      </label>
+      <label>Biological Sex
+        <select id="f_sex">
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+      </label>
+    </div>
+    <div class="btn-row"><button class="btn ghost" data-back>Back</button><button class="btn primary" data-next>Next</button></div>
+  </section>
+
+  <!-- STEP 2: Anthropometrics -->
+  <section class="step" data-step="anthro" hidden>
+    <h1>Anthropometric Profile</h1>
+    <p class="hint">Module 3 — raw values only; BMI, waist classification and BP classification are calculated separately.</p>
+    <div class="form-grid">
+      <label>Height (cm) <input type="number" id="f_height" /></label>
+      <label>Weight (kg) <input type="number" id="f_weight" /></label>
+      <label>Waist Circumference (cm) <input type="number" id="f_waist" /></label>
+      <label>Systolic BP (mmHg) <input type="number" id="f_sbp" /></label>
+      <label>Diastolic BP (mmHg) <input type="number" id="f_dbp" /></label>
+      <label>Heart Rate (bpm) <input type="number" id="f_hr" /></label>
+    </div>
+    <div class="btn-row"><button class="btn ghost" data-back>Back</button><button class="btn primary" data-next>Next</button></div>
+  </section>
+
+  <!-- STEP 3: History -->
+  <section class="step" data-step="history" hidden>
+    <h1>Health History</h1>
+    <p class="hint">Module 4 — a small progressive set for this demo; each answerable UNKNOWN / YES / NO / N/A.</p>
+    <div class="tri-grid" id="historyGrid">
+      <!-- populated by JS -->
+    </div>
+    <div class="btn-row"><button class="btn ghost" data-back>Back</button><button class="btn primary" data-next>Next</button></div>
+  </section>
+
+  <!-- STEP 4: Lab Results -->
+  <section class="step" data-step="labs" hidden>
+    <h1>Blood Report Entry</h1>
+    <p class="hint">Module 5–9 — manual entry stands in for OCR extraction; every result still becomes a structured record mapped to a standard test code.</p>
+    <table class="lab-table" id="labTable">
+      <thead><tr><th>Test</th><th>Internal Code</th><th>Result</th><th>Unit</th></tr></thead>
+      <tbody><!-- populated by JS --></tbody>
+    </table>
+    <div class="btn-row"><button class="btn ghost" data-back>Back</button><button class="btn primary" id="btnRunEngine">Run Rule Engine →</button></div>
+  </section>
+
+  <!-- STEP 5: Triggered Questions -->
+  <section class="step" data-step="triggers" hidden>
+    <h1>Targeted Questions</h1>
+    <p class="hint">Module 11 — only questions relevant to your actual findings appear here.</p>
+    <div id="triggerList"></div>
+    <div class="btn-row"><button class="btn ghost" data-back>Back</button><button class="btn primary" id="btnGenerateReport">Generate Report →</button></div>
+  </section>
+
+  <!-- STEP 6: Report -->
+  <section class="step" data-step="report" hidden>
+    <div id="reportRoot"></div>
+    <div class="btn-row noprint">
+      <button class="btn ghost" data-back>Back</button>
+      <button class="btn ghost" id="btnPrint">Print / Save as PDF</button>
+      <button class="btn primary" id="btnRestart">Start Over</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer noprint">MyHealthReport Version 1 — client-side demo. No data leaves your browser.</footer>
+
+<script src="js/data/labDictionary.js"></script>
+<script src="js/data/anthroRules.js"></script>
+<script src="js/data/questionTriggers.js"></script>
+<script src="js/data/recommendations.js"></script>
+<script src="js/engine/ruleEngine.js"></script>
+<script src="js/engine/redFlagEngine.js"></script>
+<script src="js/engine/riskEngine.js"></script>
+<script src="js/engine/domainEngine.js"></script>
+<script src="js/engine/helper.js"></script>
+<script src="js/engine/reportGenerator.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

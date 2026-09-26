@@ -1,0 +1,90 @@
+# MyHealthReport — continuous security checks.
+#
+# This repository is not under version control yet. When it is, copy this file
+# to .github/workflows/security.yml (or translate it to your CI of choice).
+# The jobs are ordered so that the ones that work today run today, and the
+# rest activate by uncommenting once the relevant layer exists.
+
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 18 * * *"   # 02:00 Asia/Kuala_Lumpur
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: DOM sink scan (no dependencies)
+        run: node Security/tools/dom-sink-scan.js "Phase i/demo"
+
+      - name: Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/owasp-top-ten
+            p/secrets
+            Security/sast/semgrep-mhr.yml
+
+      - name: Secret scan (full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependencies:
+    name: dependency review
+    runs-on: ubuntu-latest
+    if: hashFiles('package.json') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+  # ---------------------------------------------------------------------
+  # Activate when a staging environment exists. STAGING_URL must never
+  # point at production or at anything holding real patient data.
+  # ---------------------------------------------------------------------
+  # dynamic:
+  #   name: ZAP baseline (staging)
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'schedule'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: ZAP baseline scan
+  #       uses: zaproxy/action-baseline@v0.12.0
+  #       with:
+  #         target: ${{ secrets.STAGING_URL }}
+  #         rules_file_name: Security/dast/zap-rules.tsv
+  #         cmd_options: "-a -j"
+
+  # ---------------------------------------------------------------------
+  # Activate when extraction/interpretation runs through a model.
+  # ---------------------------------------------------------------------
+  # llm:
+  #   name: promptfoo (LLM layer)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "20"
+  #     - run: npx promptfoo@latest eval -c Security/llm/promptfooconfig.yaml
+  #       env:
+  #         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
